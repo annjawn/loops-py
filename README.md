@@ -58,7 +58,7 @@ uv sync --extra dev
 ## MCP Server
 
 - Ready-to-run MCP implementation (all Loops APIs):
-  [mcp/README.md](./mcp/README.md)
+  [loops_mcp/README.md](./loops_mcp/README.md)
 
 ## Authentication
 
