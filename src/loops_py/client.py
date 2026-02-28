@@ -40,6 +40,7 @@ class LoopsClient:
         retry_backoff_base: float = 0.25,
         retry_backoff_max: float = 4.0,
         retry_jitter: float = 0.1,
+        user_agent: str = "pyloops-so/0.1",
         transport: Transport | None = None,
     ) -> None:
         if not api_key.strip():
@@ -56,6 +57,8 @@ class LoopsClient:
             raise ValueError("retry_backoff_max must be >= retry_backoff_base")
         if retry_jitter < 0:
             raise ValueError("retry_jitter must be >= 0")
+        if not user_agent.strip():
+            raise ValueError("user_agent must not be empty")
 
         core = LoopsCore(
             api_key,
@@ -67,6 +70,7 @@ class LoopsClient:
             retry_backoff_base=retry_backoff_base,
             retry_backoff_max=retry_backoff_max,
             retry_jitter=retry_jitter,
+            user_agent=user_agent,
         )
 
         self.contacts = ContactsService(core)

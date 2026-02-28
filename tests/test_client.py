@@ -94,6 +94,16 @@ def test_send_event_supports_idempotency_header() -> None:
     assert transport.requests[0].headers["Idempotency-Key"] == "event-1"
 
 
+def test_default_user_agent_header_is_sent() -> None:
+    transport = StubTransport()
+    transport.queue(200, {"success": True, "id": "cont_123"})
+    client = LoopsClient("test_key", transport=transport)
+
+    client.create_contact({"email": "ua@example.com"})
+
+    assert transport.requests[0].headers["User-Agent"] == "pyloops-so/0.1"
+
+
 def test_list_transactional_emails_query() -> None:
     transport = StubTransport()
     transport.queue(

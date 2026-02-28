@@ -17,6 +17,7 @@ client = LoopsClient(
     retry_backoff_base=0.25,
     retry_backoff_max=4.0,
     retry_jitter=0.1,
+    user_agent="my-app/1.0",
 )
 ```
 

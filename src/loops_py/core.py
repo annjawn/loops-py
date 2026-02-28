@@ -71,6 +71,7 @@ class LoopsCore:
         retry_backoff_base: float,
         retry_backoff_max: float,
         retry_jitter: float,
+        user_agent: str,
     ) -> None:
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
@@ -81,6 +82,7 @@ class LoopsCore:
         self.retry_backoff_base = retry_backoff_base
         self.retry_backoff_max = retry_backoff_max
         self.retry_jitter = retry_jitter
+        self.user_agent = user_agent
 
     def request(
         self,
@@ -101,6 +103,7 @@ class LoopsCore:
         merged_headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Accept": "application/json",
+            "User-Agent": self.user_agent,
         }
         if payload is not None:
             merged_headers["Content-Type"] = "application/json"

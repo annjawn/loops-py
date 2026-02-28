@@ -59,6 +59,12 @@ from loops_py import LoopsClient
 client = LoopsClient(api_key="loops_api_key")
 ```
 
+If your network/provider applies strict bot filtering, set an explicit user agent:
+
+```python
+client = LoopsClient(api_key="loops_api_key", user_agent="my-app/1.0")
+```
+
 ## Usage model
 
 The SDK supports two call styles:
