@@ -2,6 +2,7 @@
 
 `loops-py` is a lightweight Python SDK for the [Loops API](https://loops.so/docs/api-reference), designed for production usage with minimal dependencies.
 
+> [!NOTE]
 > Unofficial Loops.so Python Library
 
 ## Why this library
