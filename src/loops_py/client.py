@@ -38,12 +38,26 @@ class LoopsClient:
         base_url: str = "https://app.loops.so/api/v1",
         timeout: float = 30.0,
         response_mode: ResponseMode = "model",
+        max_retries: int = 3,
+        retry_backoff_base: float = 0.25,
+        retry_backoff_max: float = 4.0,
+        retry_jitter: float = 0.1,
         transport: Transport | None = None,
     ) -> None:
         if not api_key.strip():
             raise ValueError("api_key must not be empty")
         if response_mode not in ("model", "json"):
             raise ValueError("response_mode must be either 'model' or 'json'")
+        if max_retries < 0:
+            raise ValueError("max_retries must be >= 0")
+        if retry_backoff_base <= 0:
+            raise ValueError("retry_backoff_base must be > 0")
+        if retry_backoff_max <= 0:
+            raise ValueError("retry_backoff_max must be > 0")
+        if retry_backoff_max < retry_backoff_base:
+            raise ValueError("retry_backoff_max must be >= retry_backoff_base")
+        if retry_jitter < 0:
+            raise ValueError("retry_jitter must be >= 0")
 
         core = LoopsCore(
             api_key,
@@ -51,6 +65,10 @@ class LoopsClient:
             timeout=timeout,
             response_mode=response_mode,
             transport=transport,
+            max_retries=max_retries,
+            retry_backoff_base=retry_backoff_base,
+            retry_backoff_max=retry_backoff_max,
+            retry_jitter=retry_jitter,
         )
 
         self.contacts = ContactsService(core)

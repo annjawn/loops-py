@@ -13,11 +13,21 @@ client = LoopsClient(
     api_key="loops_api_key",
     timeout=30.0,
     response_mode="model",  # or "json"
+    max_retries=3,
+    retry_backoff_base=0.25,
+    retry_backoff_max=4.0,
+    retry_jitter=0.1,
 )
 ```
 
 `response_mode="model"` returns typed Pydantic models.
 `response_mode="json"` returns raw dict/list payloads.
+
+Retry/backoff notes:
+
+- `429` responses are retried automatically with exponential backoff.
+- `Retry-After` response header is used when provided.
+- Set `max_retries=0` to disable retries.
 
 ## Contacts
 

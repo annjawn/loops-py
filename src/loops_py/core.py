@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import json
+import random
+import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Any, Callable, Dict, List, Literal, Mapping, Sequence, Type, TypeVar, Union
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -28,6 +32,7 @@ class HttpRequest:
 class HttpResponse:
     status: int
     body: bytes
+    headers: Dict[str, str]
 
 
 Transport = Callable[[HttpRequest], HttpResponse]
@@ -37,9 +42,17 @@ def urllib_transport(req: HttpRequest) -> HttpResponse:
     request = Request(url=req.url, method=req.method, headers=req.headers, data=req.body)
     try:
         with urlopen(request, timeout=req.timeout) as response:
-            return HttpResponse(status=response.status, body=response.read())
+            return HttpResponse(
+                status=response.status,
+                body=response.read(),
+                headers={k.lower(): v for k, v in response.headers.items()},
+            )
     except HTTPError as exc:
-        return HttpResponse(status=exc.code, body=exc.read())
+        return HttpResponse(
+            status=exc.code,
+            body=exc.read(),
+            headers={k.lower(): v for k, v in exc.headers.items()},
+        )
     except URLError as exc:
         raise LoopsError(f"Network error calling Loops API: {exc.reason}") from exc
 
@@ -53,12 +66,20 @@ class LoopsCore:
         timeout: float,
         response_mode: ResponseMode,
         transport: Transport | None,
+        max_retries: int,
+        retry_backoff_base: float,
+        retry_backoff_max: float,
+        retry_jitter: float,
     ) -> None:
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.response_mode = response_mode
         self.transport = transport or urllib_transport
+        self.max_retries = max_retries
+        self.retry_backoff_base = retry_backoff_base
+        self.retry_backoff_max = retry_backoff_max
+        self.retry_jitter = retry_jitter
 
     def request(
         self,
@@ -89,24 +110,37 @@ class LoopsCore:
         if payload is not None:
             body = json.dumps(self.to_payload(payload)).encode("utf-8")
 
-        response = self.transport(
-            HttpRequest(
-                method=method,
-                url=url,
-                headers=merged_headers,
-                body=body,
-                timeout=self.timeout,
+        attempt = 0
+        while True:
+            response = self.transport(
+                HttpRequest(
+                    method=method,
+                    url=url,
+                    headers=merged_headers,
+                    body=body,
+                    timeout=self.timeout,
+                )
             )
-        )
 
-        parsed = self.parse_json(response.body)
-        if response.status >= 400:
-            message = "Unknown error"
-            if isinstance(parsed, dict):
-                message = str(parsed.get("message") or parsed.get("error") or message)
-            raise LoopsAPIError(status_code=response.status, message=message, response=parsed)
+            if response.status == 429 and attempt < self.max_retries:
+                delay_seconds = self._retry_delay_seconds(attempt, response.headers)
+                time.sleep(delay_seconds)
+                attempt += 1
+                continue
 
-        return parsed
+            parsed = self.parse_json(response.body)
+            if response.status >= 400:
+                message = "Unknown error"
+                if isinstance(parsed, dict):
+                    message = str(parsed.get("message") or parsed.get("error") or message)
+                raise LoopsAPIError(
+                    status_code=response.status,
+                    message=message,
+                    response=parsed,
+                    headers=response.headers,
+                )
+
+            return parsed
 
     @staticmethod
     def to_payload(data: Mapping[str, Any] | BaseModel) -> Dict[str, Any]:
@@ -162,3 +196,39 @@ class LoopsCore:
         if as_json is not None:
             return as_json
         return self.response_mode == "json"
+
+    def _retry_delay_seconds(
+        self,
+        attempt: int,
+        response_headers: Mapping[str, str],
+    ) -> float:
+        retry_after = self._parse_retry_after(response_headers.get("retry-after"))
+        if retry_after is not None:
+            return retry_after
+
+        delay = min(self.retry_backoff_max, self.retry_backoff_base * (2**attempt))
+        if self.retry_jitter > 0:
+            delay += random.uniform(0, delay * self.retry_jitter)
+        return delay
+
+    @staticmethod
+    def _parse_retry_after(value: str | None) -> float | None:
+        if not value:
+            return None
+
+        value = value.strip()
+        try:
+            seconds = float(value)
+            return max(0.0, seconds)
+        except ValueError:
+            pass
+
+        try:
+            retry_time = parsedate_to_datetime(value)
+        except (TypeError, ValueError):
+            return None
+
+        now = datetime.now(timezone.utc)
+        if retry_time.tzinfo is None:
+            retry_time = retry_time.replace(tzinfo=timezone.utc)
+        return max(0.0, (retry_time - now).total_seconds())

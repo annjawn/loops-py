@@ -14,8 +14,14 @@ class StubTransport:
         self.requests: list[HttpRequest] = []
         self.responses: list[HttpResponse] = []
 
-    def queue(self, status: int, payload: object) -> None:
-        self.responses.append(HttpResponse(status=status, body=json.dumps(payload).encode("utf-8")))
+    def queue(self, status: int, payload: object, headers: dict[str, str] | None = None) -> None:
+        self.responses.append(
+            HttpResponse(
+                status=status,
+                body=json.dumps(payload).encode("utf-8"),
+                headers={k.lower(): v for k, v in (headers or {}).items()},
+            )
+        )
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         self.requests.append(request)
@@ -113,3 +119,56 @@ def test_api_error_raises_exception() -> None:
 
     assert exc.value.status_code == 404
     assert "Contact not found" in str(exc.value)
+
+
+def test_rate_limit_retries_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("loops_py.core.time.sleep", sleep_calls.append)
+
+    transport = StubTransport()
+    transport.queue(429, {"message": "Rate limit exceeded"})
+    transport.queue(200, {"success": True, "id": "cont_789"})
+    client = LoopsClient("test_key", transport=transport, retry_jitter=0)
+
+    result = client.create_contact({"email": "retry@example.com"})
+
+    assert result.id == "cont_789"
+    assert len(transport.requests) == 2
+    assert sleep_calls == [0.25]
+
+
+def test_rate_limit_retries_respect_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("loops_py.core.time.sleep", sleep_calls.append)
+
+    transport = StubTransport()
+    transport.queue(
+        429,
+        {"message": "Rate limit exceeded"},
+        headers={"Retry-After": "1.5"},
+    )
+    transport.queue(200, {"success": True, "id": "cont_999"})
+    client = LoopsClient("test_key", transport=transport, retry_jitter=0)
+
+    result = client.create_contact({"email": "retry-after@example.com"})
+
+    assert result.id == "cont_999"
+    assert sleep_calls == [1.5]
+
+
+def test_rate_limit_exhausts_retries(monkeypatch: pytest.MonkeyPatch) -> None:
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("loops_py.core.time.sleep", sleep_calls.append)
+
+    transport = StubTransport()
+    transport.queue(429, {"message": "Rate limit exceeded"})
+    transport.queue(429, {"message": "Rate limit exceeded"})
+    transport.queue(429, {"message": "Rate limit exceeded"})
+    client = LoopsClient("test_key", transport=transport, max_retries=2, retry_jitter=0)
+
+    with pytest.raises(LoopsAPIError) as exc:
+        client.create_contact({"email": "still-rate-limited@example.com"})
+
+    assert exc.value.status_code == 429
+    assert len(transport.requests) == 3
+    assert sleep_calls == [0.25, 0.5]

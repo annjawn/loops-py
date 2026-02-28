@@ -15,8 +15,10 @@ class LoopsAPIError(LoopsError):
         status_code: int,
         message: str,
         response: Any | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(f"Loops API error ({status_code}): {message}")
         self.status_code = status_code
         self.message = message
         self.response = response
+        self.headers = headers or {}

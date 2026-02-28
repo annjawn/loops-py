@@ -1,13 +1,10 @@
-# loops-py
+# Unofficial Loops.so Python Library (`loops-py`)
 
 `loops-py` is a lightweight Python SDK for the [Loops API](https://loops.so/docs/api-reference), designed for production usage with minimal dependencies.
 
-> [!NOTE]
-> Unofficial Loops.so Python Library
-
 ## Why this library
 
-- Complete support for the Loops endpoints requested
+- Complete support for [Loops.so](https://loops.so) endpoints
 - Typed request/response models via Pydantic
 - Optional raw JSON mode when you want plain dictionaries
 - Single runtime dependency (`pydantic`)
@@ -125,6 +122,35 @@ except LoopsAPIError as exc:
     print(exc.status_code)
     print(exc.response)
 ```
+
+## Rate limit handling and retries
+
+Loops applies request rate limits (baseline 10 requests/second/team) and can return `429`.
+This SDK retries `429` responses automatically with exponential backoff.
+
+Default retry behavior:
+
+- `max_retries=3` (up to 4 total attempts)
+- `retry_backoff_base=0.25` seconds
+- `retry_backoff_max=4.0` seconds
+- `retry_jitter=0.1` (10% random jitter)
+- `Retry-After` header is honored when present
+
+Configure it:
+
+```python
+from loops_py import LoopsClient
+
+client = LoopsClient(
+    api_key="loops_api_key",
+    max_retries=5,
+    retry_backoff_base=0.2,
+    retry_backoff_max=6.0,
+    retry_jitter=0.2,
+)
+```
+
+Disable retries by setting `max_retries=0`.
 
 ## Endpoint mapping
 
