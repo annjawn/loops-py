@@ -14,13 +14,11 @@ from .models import (
     ContactRequest,
     ContactUpsertResponse,
     CreateContactPropertyRequest,
-    DedicatedSendingIp,
     DeleteContactRequest,
     FindContactQuery,
     MailingList,
     SendEventRequest,
     SendTransactionalEmailRequest,
-    SuccessMessageResponse,
     SuccessResponse,
     TransactionalEmailListResponse,
     UpdateContactRequest,
@@ -106,7 +104,7 @@ class LoopsClient:
         request: Union[DeleteContactRequest, Mapping[str, Any]],
         *,
         as_json: bool | None = None,
-    ) -> Union[SuccessMessageResponse, Dict[str, Any]]:
+    ) -> Union[SuccessResponse, Dict[str, Any]]:
         return self.contacts.delete_contact(request, as_json=as_json)
 
     def create_contact_property(
@@ -182,7 +180,7 @@ class LoopsClient:
         self,
         *,
         as_json: bool | None = None,
-    ) -> Union[List[DedicatedSendingIp], List[Dict[str, Any]]]:
+    ) -> List[str]:
         return self.account.list_dedicated_sending_ips(as_json=as_json)
 
 

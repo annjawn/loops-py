@@ -11,7 +11,6 @@ from ..models import (
     CreateContactPropertyRequest,
     DeleteContactRequest,
     FindContactQuery,
-    SuccessMessageResponse,
     SuccessResponse,
     UpdateContactRequest,
 )
@@ -38,7 +37,7 @@ class ContactsService:
         as_json: bool | None = None,
     ) -> Union[ContactUpsertResponse, Dict[str, Any]]:
         payload = self._core.validate_request(request, UpdateContactRequest)
-        result = self._core.request("PUT", "/contacts/update", payload=payload)
+        result = self._core.request("POST", "/contacts/update", payload=payload)
         return self._core.marshal_single(result, ContactUpsertResponse, as_json)
 
     def find_contact(
@@ -60,10 +59,10 @@ class ContactsService:
         request: Union[DeleteContactRequest, Mapping[str, Any]],
         *,
         as_json: bool | None = None,
-    ) -> Union[SuccessMessageResponse, Dict[str, Any]]:
+    ) -> Union[SuccessResponse, Dict[str, Any]]:
         payload = self._core.validate_request(request, DeleteContactRequest)
         result = self._core.request("POST", "/contacts/delete", payload=payload)
-        return self._core.marshal_single(result, SuccessMessageResponse, as_json)
+        return self._core.marshal_single(result, SuccessResponse, as_json)
 
     def create_contact_property(
         self,

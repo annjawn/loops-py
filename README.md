@@ -156,13 +156,13 @@ Disable retries by setting `max_retries=0`.
 
 - `contacts`
   - `create_contact` -> `POST /contacts/create`
-  - `update_contact` -> `PUT /contacts/update`
+  - `update_contact` -> `POST /contacts/update`
   - `find_contact` -> `GET /contacts/find`
   - `delete_contact` -> `POST /contacts/delete`
   - `create_contact_property` -> `POST /contacts/properties`
   - `list_contact_properties` -> `GET /contacts/properties`
 - `mailing_lists`
-  - `list_mailing_lists` -> `GET /mailing-lists`
+  - `list_mailing_lists` -> `GET /lists`
 - `events`
   - `send_event` -> `POST /events/send`
 - `transactional`
@@ -174,7 +174,7 @@ Disable retries by setting `max_retries=0`.
 
 ## Idempotency support
 
-For endpoints that support idempotency, pass `idempotency_key`:
+For endpoints that support idempotency, you can optionally pass `idempotency_key`:
 
 ```python
 client.events.send_event(

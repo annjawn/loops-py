@@ -23,6 +23,15 @@ class StubTransport:
             )
         )
 
+    def queue_raw(self, status: int, body: bytes, headers: dict[str, str] | None = None) -> None:
+        self.responses.append(
+            HttpResponse(
+                status=status,
+                body=body,
+                headers={k.lower(): v for k, v in (headers or {}).items()},
+            )
+        )
+
     def __call__(self, request: HttpRequest) -> HttpResponse:
         self.requests.append(request)
         return self.responses.pop(0)
@@ -51,6 +60,17 @@ def test_create_contact_json_mode() -> None:
     result = client.create_contact({"email": "b@example.com"})
 
     assert result["id"] == "cont_456"
+
+
+def test_update_contact_uses_post_method() -> None:
+    transport = StubTransport()
+    transport.queue(200, {"success": True, "id": "cont_123"})
+    client = LoopsClient("test_key", transport=transport)
+
+    client.update_contact({"email": "a@example.com", "firstName": "Ada"})
+
+    assert transport.requests[0].method == "POST"
+    assert transport.requests[0].url.endswith("/contacts/update")
 
 
 def test_find_contact_requires_one_identifier() -> None:
@@ -99,6 +119,16 @@ def test_list_transactional_emails_query() -> None:
     assert result.pagination.next_cursor == "nxt_1"
 
 
+def test_list_mailing_lists_uses_lists_endpoint() -> None:
+    transport = StubTransport()
+    transport.queue(200, [])
+    client = LoopsClient("test_key", transport=transport)
+
+    client.list_mailing_lists()
+
+    assert transport.requests[0].url.endswith("/lists")
+
+
 def test_verify_api_key_response() -> None:
     transport = StubTransport()
     transport.queue(200, {"success": True, "teamName": "Acme"})
@@ -107,6 +137,16 @@ def test_verify_api_key_response() -> None:
     result = client.verify_api_key()
 
     assert result.team_name == "Acme"
+
+
+def test_list_dedicated_sending_ips_returns_strings() -> None:
+    transport = StubTransport()
+    transport.queue(200, ["1.2.3.4", "5.6.7.8"])
+    client = LoopsClient("test_key", transport=transport)
+
+    result = client.list_dedicated_sending_ips()
+
+    assert result == ["1.2.3.4", "5.6.7.8"]
 
 
 def test_api_error_raises_exception() -> None:
@@ -119,6 +159,32 @@ def test_api_error_raises_exception() -> None:
 
     assert exc.value.status_code == 404
     assert "Contact not found" in str(exc.value)
+
+
+def test_delete_contact_accepts_success_only_response() -> None:
+    transport = StubTransport()
+    transport.queue(200, {"success": True})
+    client = LoopsClient("test_key", transport=transport)
+
+    result = client.delete_contact({"email": "ok@example.com"})
+
+    assert result.success is True
+
+
+def test_empty_success_body_is_handled_for_write_requests() -> None:
+    transport = StubTransport()
+    transport.queue_raw(200, b"")
+    client = LoopsClient("test_key", transport=transport)
+
+    result = client.send_transactional_email(
+        {
+            "transactionalId": "cmm5c7m3w0hvs0j31wr0mqj1v",
+            "email": "user@example.com",
+            "dataVariables": {"code": "292929"},
+        }
+    )
+
+    assert result.success is True
 
 
 def test_rate_limit_retries_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:

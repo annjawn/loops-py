@@ -64,6 +64,7 @@ PropertyType = Literal["string", "number", "boolean", "date"]
 
 class CreateContactPropertyRequest(LoopsBaseModel):
     name: str
+    label: str | None = None
     type: PropertyType
 
 
@@ -104,11 +105,6 @@ class SuccessResponse(LoopsBaseModel):
     success: bool
 
 
-class SuccessMessageResponse(LoopsBaseModel):
-    success: bool
-    message: str
-
-
 class ApiKeyResponse(LoopsBaseModel):
     success: bool
     team_name: str = Field(alias="teamName")
@@ -130,13 +126,6 @@ class MailingList(LoopsBaseModel):
     name: str
     description: str
     is_public: bool = Field(alias="isPublic")
-
-
-class DedicatedSendingIp(LoopsBaseModel):
-    id: str
-    ip: str
-    domain: str
-    status: str
 
 
 class TransactionalEmail(LoopsBaseModel):

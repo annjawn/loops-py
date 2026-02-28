@@ -15,5 +15,5 @@ class MailingListsService:
         *,
         as_json: bool | None = None,
     ) -> List[MailingList] | List[Dict[str, Any]]:
-        result = self._core.request("GET", "/mailing-lists")
+        result = self._core.request("GET", "/lists")
         return self._core.marshal_list(result, MailingList, as_json)

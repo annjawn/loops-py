@@ -121,7 +121,7 @@ Library method:
 
 Notes:
 
-- Supports `idempotency_key` for safe retries.
+- `idempotency_key` is optional and can be used for safe retries.
 - Event payload can include `eventProperties` and optional `mailingLists` map.
 
 Example:
@@ -153,7 +153,7 @@ Library methods:
 
 Notes:
 
-- `send_transactional_email` supports attachments and `idempotency_key`.
+- `send_transactional_email` supports attachments; `idempotency_key` is optional.
 - `list_transactional_emails` supports pagination via `per_page` and `cursor`.
 
 Example:
@@ -185,6 +185,10 @@ Library methods:
 
 - `client.account.verify_api_key()`
 - `client.account.list_dedicated_sending_ips()`
+
+Notes:
+
+- `list_dedicated_sending_ips` returns a list of IP address strings.
 
 Example:
 

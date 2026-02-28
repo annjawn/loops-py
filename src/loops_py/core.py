@@ -140,6 +140,10 @@ class LoopsCore:
                     headers=response.headers,
                 )
 
+            # Some successful write operations can return an empty body.
+            if parsed is None and method in ("POST", "PUT", "PATCH", "DELETE"):
+                return {"success": True}
+
             return parsed
 
     @staticmethod
@@ -165,8 +169,11 @@ class LoopsCore:
     def parse_json(raw: bytes) -> Any:
         if not raw:
             return None
+        text = raw.decode("utf-8").strip()
+        if not text:
+            return None
         try:
-            return json.loads(raw.decode("utf-8"))
+            return json.loads(text)
         except json.JSONDecodeError as exc:
             raise LoopsError("Loops API returned invalid JSON") from exc
 
