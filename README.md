@@ -7,7 +7,7 @@
 - Complete support for [Loops.so](https://loops.so) endpoints
 - Typed request/response models via Pydantic
 - Optional raw JSON mode when you want plain dictionaries
-- Single runtime dependency (`pydantic`)
+- Lightweight runtime dependencies (`pydantic`, `requests`)
 - Small, composable client structure (`contacts`, `events`, `transactional`, etc.)
 
 ## Loops API docs

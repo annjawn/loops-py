@@ -8,10 +8,9 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from json import JSONDecodeError
 from typing import Any, Callable, Dict, List, Literal, Mapping, Sequence, Type, TypeVar, Union
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
+import requests
 from pydantic import BaseModel
 
 from .exceptions import LoopsAPIError, LoopsError
@@ -39,23 +38,22 @@ class HttpResponse:
 Transport = Callable[[HttpRequest], HttpResponse]
 
 
-def urllib_transport(req: HttpRequest) -> HttpResponse:
-    request = Request(url=req.url, method=req.method, headers=req.headers, data=req.body)
+def requests_transport(req: HttpRequest) -> HttpResponse:
     try:
-        with urlopen(request, timeout=req.timeout) as response:
-            return HttpResponse(
-                status=response.status,
-                body=response.read(),
-                headers={k.lower(): v for k, v in response.headers.items()},
-            )
-    except HTTPError as exc:
-        return HttpResponse(
-            status=exc.code,
-            body=exc.read(),
-            headers={k.lower(): v for k, v in exc.headers.items()},
+        response = requests.request(
+            method=req.method,
+            url=req.url,
+            headers=req.headers,
+            data=req.body,
+            timeout=req.timeout,
         )
-    except URLError as exc:
-        raise LoopsError(f"Network error calling Loops API: {exc.reason}") from exc
+        return HttpResponse(
+            status=response.status_code,
+            body=response.content,
+            headers={k.lower(): v for k, v in response.headers.items()},
+        )
+    except requests.RequestException as exc:
+        raise LoopsError(f"Network error calling Loops API: {exc}") from exc
 
 
 class LoopsCore:
@@ -77,7 +75,7 @@ class LoopsCore:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.response_mode = response_mode
-        self.transport = transport or urllib_transport
+        self.transport = transport or requests_transport
         self.max_retries = max_retries
         self.retry_backoff_base = retry_backoff_base
         self.retry_backoff_max = retry_backoff_max
