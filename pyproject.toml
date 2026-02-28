@@ -3,7 +3,7 @@ requires = ["hatchling>=1.25.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "loops-py"
+name = "pyloops-so"
 version = "0.1.1"
 description = "Lightweight Python SDK (unofficial) for the Loops API"
 readme = "README.md"
@@ -30,10 +30,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/loops-py"
-Repository = "https://github.com/your-org/loops-py"
-Issues = "https://github.com/your-org/loops-py/issues"
-Documentation = "https://github.com/your-org/loops-py#readme"
+Homepage = "https://github.com/annjawn/loops-py"
+Repository = "https://github.com/annjawn/loops-py"
+Issues = "https://github.com/annjawn/loops-py/issues"
+Documentation = "https://github.com/annjawn/loops-py#readme"
 
 [project.optional-dependencies]
 dev = [

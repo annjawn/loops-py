@@ -1,6 +1,6 @@
-# Unofficial Loops.so Python Library (`loops-py`)
+# Unofficial Loops.so Python Library (`pyloops-so`)
 
-`loops-py` is a lightweight Python SDK for the [Loops API](https://loops.so/docs/api-reference), designed for production usage with minimal dependencies.
+`pyloops-so` is a lightweight Python SDK for the [Loops API](https://loops.so/docs/api-reference), designed for production usage with minimal dependencies.
 
 ## Why this library
 
@@ -34,7 +34,7 @@ Endpoint docs covered by this SDK:
 Install from PyPI:
 
 ```bash
-uv add loops-py
+uv add pyloops-so
 ```
 
 For local development:

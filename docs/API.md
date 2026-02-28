@@ -1,6 +1,6 @@
 # API Guide
 
-This document explains how each Loops API area maps to `loops-py`, with links to the official Loops docs.
+This document explains how each Loops API area maps to `pyloops-so`, with links to the official Loops docs.
 
 Official base reference: [https://loops.so/docs/api-reference](https://loops.so/docs/api-reference)
 
@@ -211,7 +211,7 @@ typed_lists = client.mailing_lists.list_mailing_lists(as_json=False)
 
 ## Error handling
 
-`loops-py` raises `LoopsAPIError` for non-2xx responses.
+`pyloops-so` raises `LoopsAPIError` for non-2xx responses.
 
 ```python
 from loops_py import LoopsAPIError
