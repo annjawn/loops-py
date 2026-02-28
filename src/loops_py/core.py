@@ -6,6 +6,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from json import JSONDecodeError
 from typing import Any, Callable, Dict, List, Literal, Mapping, Sequence, Type, TypeVar, Union
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -128,21 +129,30 @@ class LoopsCore:
                 attempt += 1
                 continue
 
-            parsed = self.parse_json(response.body)
+            parsed, raw_text = self.parse_json_best_effort(response.body)
             if response.status >= 400:
                 message = "Unknown error"
                 if isinstance(parsed, dict):
                     message = str(parsed.get("message") or parsed.get("error") or message)
+                elif raw_text:
+                    message = raw_text[:300]
                 raise LoopsAPIError(
                     status_code=response.status,
                     message=message,
-                    response=parsed,
+                    response=parsed if parsed is not None else raw_text,
                     headers=response.headers,
                 )
 
-            # Some successful write operations can return an empty body.
+            # Some successful write operations can return empty or non-JSON bodies.
             if parsed is None and method in ("POST", "PUT", "PATCH", "DELETE"):
-                return {"success": True}
+                result: dict[str, Any] = {"success": True}
+                if raw_text:
+                    result["raw"] = raw_text
+                return result
+
+            # Be lenient if the upstream responds with non-JSON text on success.
+            if parsed is None and raw_text:
+                return {"raw": raw_text}
 
             return parsed
 
@@ -176,6 +186,18 @@ class LoopsCore:
             return json.loads(text)
         except json.JSONDecodeError as exc:
             raise LoopsError("Loops API returned invalid JSON") from exc
+
+    @staticmethod
+    def parse_json_best_effort(raw: bytes) -> tuple[Any, str]:
+        if not raw:
+            return None, ""
+        text = raw.decode("utf-8", errors="replace").strip()
+        if not text:
+            return None, ""
+        try:
+            return json.loads(text), text
+        except JSONDecodeError:
+            return None, text
 
     def marshal_single(
         self,

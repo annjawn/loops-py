@@ -187,6 +187,42 @@ def test_empty_success_body_is_handled_for_write_requests() -> None:
     assert result.success is True
 
 
+def test_non_json_success_body_is_handled_for_write_requests() -> None:
+    transport = StubTransport()
+    transport.queue_raw(200, b"ok")
+    client = LoopsClient("test_key", transport=transport)
+
+    result = client.send_transactional_email(
+        {
+            "transactionalId": "cmm5c7m3w0hvs0j31wr0mqj1v",
+            "email": "user@example.com",
+            "dataVariables": {"code": "292929"},
+        },
+        as_json=True,
+    )
+
+    assert result["success"] is True
+    assert result["raw"] == "ok"
+
+
+def test_non_json_error_body_raises_api_error() -> None:
+    transport = StubTransport()
+    transport.queue_raw(500, b"Internal Server Error")
+    client = LoopsClient("test_key", transport=transport)
+
+    with pytest.raises(LoopsAPIError) as exc:
+        client.send_transactional_email(
+            {
+                "transactionalId": "cmm5c7m3w0hvs0j31wr0mqj1v",
+                "email": "user@example.com",
+                "dataVariables": {"code": "292929"},
+            }
+        )
+
+    assert exc.value.status_code == 500
+    assert "Internal Server Error" in exc.value.message
+
+
 def test_rate_limit_retries_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> None:
     sleep_calls: list[float] = []
     monkeypatch.setattr("loops_py.core.time.sleep", sleep_calls.append)
