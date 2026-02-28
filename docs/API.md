@@ -30,6 +30,14 @@ Retry/backoff notes:
 - `Retry-After` response header is used when provided.
 - Set `max_retries=0` to disable retries.
 
+### Retry behavior details
+
+- Retries are attempted only for `429 Too Many Requests`.
+- Total attempts = `1 + max_retries`.
+- Default `max_retries=3` means up to **4 total attempts**.
+- Default backoff (without `Retry-After`) is approximately:
+  `0.25s`, `0.5s`, `1.0s` (plus jitter).
+
 ## Contacts
 
 Loops docs:

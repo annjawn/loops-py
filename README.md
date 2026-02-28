@@ -5,6 +5,9 @@
 
 `pyloops-so` is a lightweight Python SDK for the [Loops API](https://loops.so/docs/api-reference), designed for production usage with minimal dependencies.
 
+> [!IMPORTANT]
+> Read the full API guide before integrating: [API Guide](./docs/API.md)
+
 ## Why this library
 
 - Complete support for [Loops.so](https://loops.so) endpoints
@@ -45,6 +48,11 @@ For local development:
 ```bash
 uv sync --extra dev
 ```
+
+## Examples
+
+- Cognito custom email sender Lambda example:
+  [examples/cognito_email_sender.py](./examples/cognito_email_sender.py)
 
 ## Authentication
 
