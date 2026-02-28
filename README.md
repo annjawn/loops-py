@@ -55,6 +55,11 @@ uv sync --extra dev
 - Cognito custom email sender Lambda example:
   [examples/cognito_email_sender.py](./examples/cognito_email_sender.py)
 
+## MCP Server
+
+- Ready-to-run MCP implementation (all Loops APIs):
+  [mcp/README.md](./mcp/README.md)
+
 ## Authentication
 
 Loops uses Bearer auth for all endpoints:
