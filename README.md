@@ -2,6 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/pyloops-so.svg)](https://pypi.org/project/pyloops-so/)
 [![CI](https://github.com/annjawn/loops-py/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/annjawn/loops-py/actions/workflows/ci.yml)
+[![Python versions](https://img.shields.io/pypi/pyversions/pyloops-so.svg)](https://pypi.org/project/pyloops-so/)
 
 `pyloops-so` is a, **unofficial** lightweight Python SDK for the [Loops API](https://loops.so/docs/api-reference), designed for production usage with minimal dependencies.
 
